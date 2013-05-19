@@ -1,0 +1,12 @@
+[
+{
+    "id": "tools",
+    "children":
+    [
+        {
+            "id": "scalbuild-projectStatus",
+             "command": "scal_project_status"
+        }
+    ]
+}
+]
