@@ -6,6 +6,8 @@ from xml.etree.ElementTree import ElementTree
 #from ScalBuild import DataListener
 
 import ScalBuild.Exec2
+from ScalBuild.Exec2 import DataListener
+
 
 def getProjectsScalaFolders():
 
@@ -101,7 +103,23 @@ class ScalBuildProject(object):
     def build(self):
 
         if self.buildSystem == "sbt":
+
+            self.printlnToOutput("[Project] Building Using sbt")
+
+            ## Change output parameters
+            ###############################
+            self.dataListener.setOutputSetting("result_base_dir", self.projectPath)
             self.dataListener.setOutputSetting("result_file_regex", "^\[error\] (.+):([0-9]+): (.+)$")
+
+            ## Create Executor
+            ############################
+            executor = ScalBuild.Exec2.CommandExecutor(self.dataListener)
+         
+
+            ## Build
+            ################
+            executor.run( shell_cmd = "cd "+self.projectPath+" && sbt compile",
+                encoding =  "UTF-8" )
 
         elif self.buildSystem == "maven":
 
@@ -116,8 +134,6 @@ class ScalBuildProject(object):
             ############################
             executor = ScalBuild.Exec2.CommandExecutor(self.dataListener)
 
-
-            return
             ## Build
             ################
             executor.run( shell_cmd = "cd "+self.projectPath+" && mvn compile",
@@ -151,9 +167,6 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
     ## Main Run of command
     ###########################
     def run(self,paths = []):
-
-
-
 
         ## Prepare Output Panel,
         ## Use "exec", so that output gets shared with the normal exec command call
@@ -232,7 +245,7 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
         self.printlnToOutput("--- Building Projects ----")
         for project in buildProjects:
             self.printlnToOutput("Project: "+project.strId())
-            #project.build()
+            project.build()
 
         ## Detect For each folder the project, and dependencies
         ####################
