@@ -3,7 +3,9 @@ import glob
 import os
 from xml.etree.ElementTree import ElementTree
 
+#from ScalBuild import DataListener
 
+import ScalBuild.Exec2
 
 def getProjectsScalaFolders():
 
@@ -27,12 +29,17 @@ def getProjectsScalaFolders():
     return resFolders
 
 
+
 '''
 This Class Describes a project, with informations about it, and dependencies etc...
 '''
-class ScalBuildProject():
+class ScalBuildProject(object):
 
-    dependencies = []
+    def printlnToOutput(self,string):
+        if self.dataListener:
+            self.dataListener.println(string)
+        else:
+            print(string)
 
     def __init__(self, projectPath=None):
 
@@ -41,15 +48,19 @@ class ScalBuildProject():
         self.artifactId  = os.path.basename(projectPath)
         self.groupId     = os.path.basename(projectPath)
         self.version     = "unknown"
+        self.projectPath = projectPath
+        self.dependencies = []
 
         ## Maven project ?
         #####################
         if os.path.isfile(projectPath+"/pom.xml"):
 
+            self.buildSystem = "maven"
+
             ## Read in XML
             doc = ElementTree(file=projectPath+"/pom.xml")
 
-            print("IN MAVEN PROJECT (folder "+self.artifactId+")")
+            #print("IN MAVEN PROJECT (folder "+self.artifactId+")")
 
             #### Update Project infos
             ###################
@@ -72,28 +83,77 @@ class ScalBuildProject():
             ####################
             dependencyElements = doc.findall("{{{0}}}dependencies/{{{0}}}dependency".format("http://maven.apache.org/POM/4.0.0"))
             for dependency in dependencyElements:
-                print("Found Dependency: "+str(dependency))
+                #print("Found Dependency: "+str(dependency))
                 self.dependencies += [{
                             "artifactId":dependency.findtext('{http://maven.apache.org/POM/4.0.0}artifactId'),
                             "groupId": dependency.findtext('{http://maven.apache.org/POM/4.0.0}groupId'),
                             "version": dependency.findtext('{http://maven.apache.org/POM/4.0.0}version')
                         }]
-
+        else:
+            self.buildSystem = "sbt"
         ## Report
         ################
         #for dep in dependencies
 
 
+    ## Build The Project using maven of SBT or whatever
+    ##############################
+    def build(self):
+
+        if self.buildSystem == "sbt":
+            self.dataListener.setOutputSetting("result_file_regex", "^\[error\] (.+):([0-9]+): (.+)$")
+
+        elif self.buildSystem == "maven":
+
+            self.printlnToOutput("[Project] Building Using maven")
+
+            ## Change output parameters
+            ###############################
+            self.dataListener.setOutputSetting("result_base_dir", self.projectPath)
+            self.dataListener.setOutputSetting("result_file_regex", "^\[error\] (.+):([0-9]+): (.+)$")
+
+            ## Create Executor
+            ############################
+            executor = ScalBuild.Exec2.CommandExecutor(self.dataListener)
 
 
-exec2_existing_output = 0
+            return
+            ## Build
+            ################
+            executor.run( shell_cmd = "cd "+self.projectPath+" && mvn compile",
+                encoding =  "UTF-8" )
 
-class ScalBuildCommand(sublime_plugin.WindowCommand):
+        else:
+            self.printlnToOutput("[Project] Unsupported buildSystem")
 
+
+    ## Returns String id (groupId:artifactId:version)
+    def strId(self):
+        return self.groupId+":"+self.artifactId+":"+self.version
+
+class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
+
+    def description(self):
+        return "Build"
+
+    ## Data Listener Implementation
+    def on_data(self,string):
+        self.outputPanel.run_command('append', {'characters':string, 'force': True, 'scroll_to_end': True})
+
+    ## Utility println
     def printlnToOutput(self,string):
         self.outputPanel.run_command('append', {'characters':string+"\n", 'force': True, 'scroll_to_end': True})
 
-    def run(self):
+    ## Change output view settings
+    def setOutputSetting(self,name,value):
+        self.outputPanel.settings().set(name, value)
+
+    ## Main Run of command
+    ###########################
+    def run(self,paths = []):
+
+
+
 
         ## Prepare Output Panel,
         ## Use "exec", so that output gets shared with the normal exec command call
@@ -101,15 +161,39 @@ class ScalBuildCommand(sublime_plugin.WindowCommand):
 
         self.outputPanel = self.window.create_output_panel("exec")
         self.outputPanel.set_name("exec")
+
+
+        ## Output Customisation
+        #############################
+        self.outputPanel.settings().set("line_numbers", False)
+        self.outputPanel.settings().set("gutter", False)
+        self.outputPanel.settings().set("scroll_past_end", False)
         self.window.run_command("show_panel", {"panel": "output.exec"})
 
-        print("Scala Command window: "+str(self.window.id()))
+        self.printlnToOutput("Call args: "+str(paths))
 
-        print("Scala output index: "+str(self.window.get_view_index(self.outputPanel)))
+        ## Limit Build to project of current view or provided comand paths
+        ##################################
+        currentFile = self.window.active_view().file_name()
+        if len(paths) > 0:
+            currentFile = paths[0]
+
+        if currentFile != None:
+            self.printlnToOutput("Current View: "+currentFile)
+        else:
+            self.printlnToOutput("Current View is not defined: ")
+
+
 
 
         ## Find Project To be build
         ##################
+        buildProjects = []
+
+
+
+        ## Find Projects To be build
+        ###############
         self.printlnToOutput("Building Scala Projects from Project's Folders")
         for scalaFolder in getProjectsScalaFolders():
 
@@ -120,6 +204,7 @@ class ScalBuildCommand(sublime_plugin.WindowCommand):
             ## Parse Maven Project to get infos
             ###################
             project = ScalBuildProject(scalaFolder)
+            project.dataListener = self
 
             ### Show Infos
             self.printlnToOutput("- artifactId: "+project.artifactId)
@@ -132,40 +217,22 @@ class ScalBuildCommand(sublime_plugin.WindowCommand):
             for dep in project.dependencies:
                 self.printlnToOutput("---> Dependency: "+dep["artifactId"])
 
-            ## Maven or Scala ?
-            ##################
 
-            ## Maven
-            if os.path.isfile(scalaFolder+"/pom.xml"):
-                self.printlnToOutput("---> Using maven to compile")
+            ## Is Current File in Project ?
+            ## It no current File -> add all projects to build
+            ########################
+            if currentFile == None:
+                buildProjects.append(project)
+            elif currentFile != None and currentFile.startswith(project.projectPath):
+                buildProjects.append(project)
 
-                #"existingOutput" : self.outputPanel.buffer_id()
-                #Exec2Command.existingOutput =  self.outputPanel
 
-                exec2_existing_output = self.outputPanel
-
-                self.window.run_command('exec2',
-                    {
-                        "shell_cmd": "cd "+scalaFolder+" && mvn compile",
-                        "encoding" : "UTF-8",
-                        "file_regex": "^\[error\] (.+):([0-9]+): (.+)$"
-
-                    })
-
-            ## Scala
-            else:
-                 self.printlnToOutput("---> Using sbt to compile")
-
-            ## Execute scala
-            '''
-            sublime.active_window().run_command('exec2',
-                                    {
-                                        "shell_cmd": "cd "+scalaFolder+" && sbt compile",
-                                        "encoding" : "UTF-8",
-                                        "file_regex": "^\[error\] (.+):([0-9]+): (.+)$",
-                                        "existingOutput" : self.outputPanel
-                                    })
-            '''
+        ## Build Selected Projects
+        #######################
+        self.printlnToOutput("--- Building Projects ----")
+        for project in buildProjects:
+            self.printlnToOutput("Project: "+project.strId())
+            #project.build()
 
         ## Detect For each folder the project, and dependencies
         ####################

@@ -1,0 +1,17 @@
+[
+{
+    "id": "scalbuild",
+    "caption" : "ScalBuild",
+    "children":
+    [
+        {
+            "id": "scalbuild-build",
+             "command": "scal_build",
+
+             "args": {
+                "paths" : []
+             }
+        }
+    ]
+}
+]

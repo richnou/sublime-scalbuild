@@ -115,6 +115,108 @@ class AsyncProcess(object):
                 self.proc.stderr.close()
                 break
 
+class DataListener(object):
+
+    def println(self, str):
+        self.on_data(str+"\n")
+
+    def on_data(self, str):
+        pass
+
+## Runs  A Command, outputing to a special DataListener Object, not to a panel.
+## This is largely inspired from Standard Exec.py module
+class CommandExecutor(ProcessListener):
+
+    quiet = True
+    encoding = "utf-8"
+
+    def __init__(self,dataListener = DataListener):
+        self.dataListener = dataListener
+
+    def run(self,shell_cmd = "", working_dir = "",encoding = "utf-8",env = {},kill = False,**kwargs):
+
+        if kill:
+            if self.proc:
+                self.proc.kill()
+                self.proc = None
+                self.append_string(None, "[Cancelled]")
+            return
+
+        shell_cmd = str(shell_cmd)
+        self.dataListener.println("In Executor, with cmd: "+shell_cmd)
+
+
+        ## Run
+        ######################################
+
+        #### Merge ENV
+        ##########
+        merged_env = env.copy()
+        if hasattr(self,'build_env'):
+            merged_env.update(self.build_env)
+
+        ## Change to workdir
+        #############
+        if working_dir != "":
+            os.chdir(working_dir)
+
+        ## Run
+        #################
+        try:
+            # Forward kwargs to AsyncProcess
+            self.proc = AsyncProcess(None, shell_cmd, merged_env, self, **kwargs)
+        except Exception as e:
+            self.dataListener.println(str(e) + "\n")
+
+
+    ## Imported from Exec.py
+    def finish(self, proc):
+        if not self.quiet:
+            elapsed = time.time() - proc.start_time
+            exit_code = proc.exit_code()
+            if exit_code == 0 or exit_code == None:
+                self.append_string(proc,
+                    ("[Finished in %.1fs]" % (elapsed)))
+            else:
+                self.append_string(proc, ("[Finished in %.1fs with exit code %d]\n"
+                    % (elapsed, exit_code)))
+                self.append_string(proc, self.debug_text)
+
+        if proc != self.proc:
+            return
+
+
+    def append_string(self, proc, str):
+        self.append_data(proc, str.encode(self.encoding))
+
+    ## Imported from Exec.py
+    def append_data(self, proc, data):
+        if proc != self.proc:
+            # a second call to exec has been made before the first one
+            # finished, ignore it instead of intermingling the output.
+            if proc:
+                proc.kill()
+            return
+
+        try:
+            str = data.decode(self.encoding)
+        except:
+            str = "[Decode error - output not " + self.encoding + "]\n"
+            proc = None
+
+        # Normalize newlines, Sublime Text always uses a single \n separator
+        # in memory.
+        str = str.replace('\r\n', '\n').replace('\r', '\n')
+
+        ## Give Output to output listener
+        self.dataListener.on_data(str)
+
+    def on_data(self, proc, data):
+        sublime.set_timeout(functools.partial(self.append_data, proc, data), 0)
+
+    def on_finished(self, proc):
+        sublime.set_timeout(functools.partial(self.finish, proc), 0)
+
 class Exec2Command(sublime_plugin.WindowCommand, ProcessListener):
     def run(self, cmd = None, shell_cmd = None, file_regex = "", line_regex = "", working_dir = "",
             encoding = "utf-8", env = {}, quiet = False, kill = False, existingOutput = 0,
@@ -129,35 +231,9 @@ class Exec2Command(sublime_plugin.WindowCommand, ProcessListener):
                 self.append_string(None, "[Cancelled]")
             return
 
-        ## Get output panel, create or try to get
-        ####################
-        #existingOutput = self.window.run_command("get_output_panel",{"panel":"output.exec"})
-
-        print("Exec2 window: "+str(self.window.id()))
-       # print("Existing output: "+str(exec2_existing_output))
-
-
-
-        ## Existing and not clear: reuse
-        if not hasattr(self, 'output_view') and existingOutput:
-            print("USING EXISTING OUTPUT: "+str(existingOutput))
-            #self.output_view = self.window.run_command("get_panel", {"panel": "output.exec"})
-
-            #print("Using existing view with id: "+str(existingOutput))
-            for availableView in self.window.views():
-                print("Available view : "+str(availableView.id()))
-            #    if availableView.id() == existingOutput:
-            #        self.output_view = availableView
-            #        break
-
-        ## Otherwise: create
-        else:
-            self.output_view = self.window.create_output_panel("exec")
-
-
-        print("Existing Output is of size: "+str(self.output_view.size()))
-
+        print("In Exe2")
         return
+
 
 
 
@@ -176,11 +252,7 @@ class Exec2Command(sublime_plugin.WindowCommand, ProcessListener):
         self.output_view.settings().set("scroll_past_end", False)
         self.output_view.assign_syntax(syntax)
 
-        # Call create_output_panel a second time after assigning the above
-        # settings, so that it'll be picked up as a result buffer
-        #self.window.create_output_panel("exec")
 
-        self.output_view.run_command('append', {'characters': "From Exec2 -> "+ str(existingOutput), 'force': True, 'scroll_to_end': True})
 
         self.encoding = encoding
         self.quiet = quiet
@@ -251,6 +323,8 @@ class Exec2Command(sublime_plugin.WindowCommand, ProcessListener):
         # Normalize newlines, Sublime Text always uses a single \n separator
         # in memory.
         str = str.replace('\r\n', '\n').replace('\r', '\n')
+
+        ## Give Output to output listener
 
         self.output_view.run_command('append', {'characters': str, 'force': True, 'scroll_to_end': True})
 

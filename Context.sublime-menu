@@ -1,0 +1,14 @@
+[
+{
+    "id": "scalbuild",
+    "description" : "ScalBuild",
+    "caption" : "ScalBuild",
+    "children":
+    [
+        {
+            "id": "scalbuild-build",
+             "command": "scal_build"
+        }
+    ]
+}
+]
