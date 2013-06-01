@@ -81,6 +81,14 @@ class ScalBuildProject(object):
             self.groupId     = doc.findtext('{http://maven.apache.org/POM/4.0.0}groupId')
             self.version     = doc.findtext('{http://maven.apache.org/POM/4.0.0}version')
 
+            ## Try to Update local infos from parent if necessary
+            if hasattr(self,'parent'):
+                if self.groupId == None:
+                    self.groupId = self.parent['groupId']
+                if self.version == None:
+                    self.version = self.parent['version']
+
+
             #### Get Dependencies with XPATh
             ####################
             dependencyElements = doc.findall("{{{0}}}dependencies/{{{0}}}dependency".format("http://maven.apache.org/POM/4.0.0"))
@@ -114,7 +122,7 @@ class ScalBuildProject(object):
             ## Create Executor
             ############################
             executor = ScalBuild.Exec2.CommandExecutor(self.dataListener)
-         
+
 
             ## Build
             ################
@@ -128,7 +136,7 @@ class ScalBuildProject(object):
             ## Change output parameters
             ###############################
             self.dataListener.setOutputSetting("result_base_dir", self.projectPath)
-            self.dataListener.setOutputSetting("result_file_regex", "^\[error\] (.+):([0-9]+): (.+)$")
+            self.dataListener.setOutputSetting("result_file_regex", "^\[ERROR\] (.+):([0-9]+): (.+)$")
 
             ## Create Executor
             ############################
@@ -155,10 +163,12 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
     ## Data Listener Implementation
     def on_data(self,string):
         self.outputPanel.run_command('append', {'characters':string, 'force': True, 'scroll_to_end': True})
+        self.outputPanel.run_command('move_to',{'to': 'eof'})
 
     ## Utility println
     def printlnToOutput(self,string):
         self.outputPanel.run_command('append', {'characters':string+"\n", 'force': True, 'scroll_to_end': True})
+        self.outputPanel.run_command('move_to',{'to': 'eof'})
 
     ## Change output view settings
     def setOutputSetting(self,name,value):
@@ -179,8 +189,9 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
         ## Output Customisation
         #############################
         self.outputPanel.settings().set("line_numbers", False)
-        self.outputPanel.settings().set("gutter", False)
+        self.outputPanel.settings().set("gutter", True)
         self.outputPanel.settings().set("scroll_past_end", False)
+        self.outputPanel.set_read_only(True)
         self.window.run_command("show_panel", {"panel": "output.exec"})
 
         self.printlnToOutput("Call args: "+str(paths))

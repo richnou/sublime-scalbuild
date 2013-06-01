@@ -1,4 +1,16 @@
 {
     "target" : "scal_build",
+    "selector": "source.scala",
 
+    "variants": [
+
+        {
+          "target": "scal_build",
+          "name": "Install",
+          "args": {
+                "target" : "install"
+           }
+        }
+
+    ]
 }
