@@ -13,6 +13,12 @@ class ProcessListener(object):
     def on_finished(self, proc):
         pass
 
+class ProcessStatusListener(object):
+
+    def on_finished(self, proc):
+        pass
+
+
 # Encapsulates subprocess.Popen, forwarding stdout to a supplied
 # ProcessListener (on a separate thread)
 class AsyncProcess(object):
@@ -127,11 +133,12 @@ class DataListener(object):
 ## This is largely inspired from Standard Exec.py module
 class CommandExecutor(ProcessListener):
 
-    quiet = True
+    quiet = False
     encoding = "utf-8"
 
-    def __init__(self,dataListener = DataListener):
+    def __init__(self,dataListener = DataListener,processStatusListener=ProcessStatusListener):
         self.dataListener = dataListener
+        self.processStatusListener = processStatusListener
 
     def run(self,shell_cmd = "", working_dir = "",encoding = "utf-8",env = {},kill = False,**kwargs):
 
@@ -171,16 +178,19 @@ class CommandExecutor(ProcessListener):
 
     ## Imported from Exec.py
     def finish(self, proc):
+
+        ## Get Exit code and pass to status listener
+        self.processStatusListener.on_finished(proc)
+
+        ## Debug if necessary
         if not self.quiet:
             elapsed = time.time() - proc.start_time
             exit_code = proc.exit_code()
             if exit_code == 0 or exit_code == None:
-                self.append_string(proc,
-                    ("[Finished in %.1fs]" % (elapsed)))
+                self.dataListener.on_data( ("[Finished in %.1fs]" % (elapsed)))
             else:
-                self.append_string(proc, ("[Finished in %.1fs with exit code %d]\n"
+                self.dataListener.on_data(("[Finished in %.1fs with exit code %d]\n"
                     % (elapsed, exit_code)))
-                self.append_string(proc, self.debug_text)
 
         if proc != self.proc:
             return
