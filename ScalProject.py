@@ -155,7 +155,7 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
 
                 ## If Build successful -> Build not required anymore
                 ## Build required is updated in on_finished method as ProcessStatusListener
-                executor.run( shell_cmd = "cd "+self.projectPath+" && mvn compile", encoding =  "UTF-8" )
+                executor.run( shell_cmd = "cd "+self.projectPath+" && mvn install", encoding =  "UTF-8" )
 
 
         else:
