@@ -20,6 +20,9 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
         ## If Exit code is not 0 -> build was not successful
         if proc.exit_code() != 0 and proc.exit_code() != None:
             self.buildRequired = True
+        else:
+            self.buildRequired = False
+
 
     def printlnToOutput(self,string):
         if self.dataListener:
@@ -154,10 +157,6 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
                 ## Build required is updated in on_finished method as ProcessStatusListener
                 executor.run( shell_cmd = "cd "+self.projectPath+" && mvn compile", encoding =  "UTF-8" )
 
-                self.printlnToOutput("["+self.artifactId+"] Done")
-
-                ###############
-                self.buildRequired = False
 
         else:
             self.printlnToOutput("["+self.artifactId+"] Unsupported buildSystem")

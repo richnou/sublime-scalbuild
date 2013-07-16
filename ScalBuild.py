@@ -207,7 +207,6 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
 
 
 
-
 class ScalaProjectStatusFillBufferCommand(sublime_plugin.TextCommand):
 
 
