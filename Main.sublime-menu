@@ -4,8 +4,18 @@
     "children":
     [
         {
-            "id": "scalbuild-projectStatus",
-             "command": "scal_project_status"
+            "id": "scalbuild-reloadProjects",
+             "command": "scal_reload_projects"
+        },
+        {
+            "id": "scalbuild-runmain",
+             "command": "scal_run_main"
+        },
+        {
+            "id": "scalbuild-rerunmain",
+             "command": "scal_run_main",
+             "caption" : "Scala Main ReRun",
+             "args" : { "paths": [] , "reRun" : "true" }
         }
     ]
 }

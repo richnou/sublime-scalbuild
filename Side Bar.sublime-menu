@@ -11,6 +11,13 @@
              "args": {
                 "paths" : []
              }
+        },
+        {
+            "id": "scalbuild-runmain",
+             "command": "scal_run_main",
+             "args": {
+                "paths" : []
+             }
         }
     ]
 }

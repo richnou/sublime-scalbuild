@@ -11,6 +11,7 @@ from ScalBuild.Exec2 import DataListener
 import ScalBuild.ScalProject
 from ScalBuild.ScalProject import ScalBuildProject
 
+import re
 
 '''
     The ScalBuild Plugin maintains a list of description of detected Scala Projects
@@ -60,7 +61,6 @@ def scalBuildListProjects():
 
 # List Projects
 scalBuildListProjects()
-
 
 '''
 This methods looks for a ScalBuildProject responding to the provided groupId artifactId and version in the availableProjects array
@@ -126,14 +126,21 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
     def setOutputSetting(self,name,value):
         self.outputPanel.settings().set(name, value)
 
+
+    ## Threaded Run
+    ##########################
+    def run(self,paths = [],buildTarget="install"):
+        self.paths = paths
+        self.buildTarget = buildTarget
+        sublime.set_timeout_async(self.do_run, 0)
+
     ## Main Run of command
     ###########################
-    def run(self,paths = []):
+    def do_run(self):
 
         ## Prepare Output Panel,
         ## Use "exec", so that output gets shared with the normal exec command call
         ############################################
-
         self.outputPanel = self.window.create_output_panel("exec")
         self.outputPanel.set_name("exec")
 
@@ -146,19 +153,18 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
         self.outputPanel.set_read_only(True)
         self.window.run_command("show_panel", {"panel": "output.exec"})
 
-        self.printlnToOutput("Call args: "+str(paths))
+        self.printlnToOutput("Call args: "+str(self.paths))
 
         ## Limit Build to project of current view or provided comand paths
         ##################################
         currentFile = self.window.active_view().file_name()
-        if len(paths) > 0:
+        if len(self.paths) > 0:
             currentFile = paths[0]
 
         if currentFile != None:
             self.printlnToOutput("Current View: "+currentFile)
         else:
             self.printlnToOutput("Current View is not defined: ")
-
 
 
 
@@ -203,40 +209,120 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
         self.printlnToOutput("------ Building Projects --------")
         for project in ScalBuild.buildProjects:
             self.printlnToOutput("Project: "+project.strId())
-            project.build()
+            project.build(buildTarget=self.buildTarget)
+
+
+#######################################
+## Thsi command just reloads the list of projects
+########################################
+class ScalReloadProjectsCommand(sublime_plugin.WindowCommand):
+
+    def run(self):
+        scalBuildListProjects()
 
 
 
-class ScalaProjectStatusFillBufferCommand(sublime_plugin.TextCommand):
+
+###################################
+## Command To Run a main file
+######################################
+class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
+
+    def __init__(self, projectPath=None):
+
+        ## Defaults
+        self.lastMain    = None
+        self.lastProject = None
 
 
-    def run(self,edit):
 
-        ## Write Hello
-        ###############
-        position = 0
-        position += self.view.insert(edit,position,"Detected Scala Projects in this project, and SBT build status\n\n")
+    def description(self):
+        return "Run Main using Scala over maven"
 
-        ## Get All Folders:
-        #############
-        for folder in sublime.active_window().folders():
+    ## Data Listener Implementation
+    def on_data(self,string):
+        self.outputPanel.run_command('append', {'characters':string, 'force': True, 'scroll_to_end': True})
+        self.outputPanel.run_command('move_to',{'to': 'eof'})
 
-            ## Check if the folder may be sbt buildable
+    ## Utility println
+    def printlnToOutput(self,string):
+        self.outputPanel.run_command('append', {'characters':string+"\n", 'force': True, 'scroll_to_end': True})
+        self.outputPanel.run_command('move_to',{'to': 'eof'})
+
+    def run(self,paths=[],reRun=False):
+
+        ## Open Output Panel
+        ##################
+        self.outputPanel = sublime.active_window().create_output_panel("run")
+        self.outputPanel.set_name("run")
+        sublime.active_window().run_command("show_panel", {"panel": "output.run"})
+
+        ## ReRun or not ?
+        ########################
+
+        ## Can't rerun
+        if reRun == False or (self.lastProject == None or self.lastMain == None):
+
+            ## Determine File and class
+            #################
+            #currentFile = sublime.active_window().active_view().file_name()
+            #currentFile = SideBarSelection(paths).getSelectedItems().index(0)
+            currentFile = paths[0]
+
+            #### Don't run not scala files
+            if len(currentFile)>0 and currentFile.endswith(".scala")!=True :
+                return
+
+            self.printlnToOutput("Running File: "+currentFile)
+
+            ## Determine Project Folder
             ##############
-
-            ## Pattern src/main/scala is present
-            detectionPatterns = ['src/main/scala','src-main-scala','*.scala']
-            foundScala = False
-            for pattern in detectionPatterns:
-                if len(glob.glob(folder+"/"+pattern))!=0 :
-                    foundScala = True
+            currentProject = None
+            for project in ScalBuild.availableProjects:
+                if  currentFile.startswith(project.projectPath):
+                    currentProject = project
                     break
 
-            ## Print folder Name if scala detected
-            ##########
-            if foundScala:
-                position += self.view.insert(edit,position,"Scala Folder: "+folder+"\n\n")
+            if currentProject==None:
+                self.printlnToOutput("Error: File must be in a ScalBuild project folder ")
+                return
 
+
+            #### Determine Theoretical Class by extracting package and taking file name
+            ################
+
+            ## File Name
+            fileName = re.search(".*/(.+)\.scala",currentFile)
+            if fileName == None:
+                self.printlnToOutput("Could not determine File name")
+            else:
+                fileName = fileName.group(1)
+
+            ## Package
+            f = open(currentFile)
+            content = f.read()
+            packageName = re.search("package (.*)\s*;?\n\r?",content)
+            if packageName == None:
+                self.printlnToOutput("Could not determine packageName name")
+            else:
+                packageName = packageName.group(1)
+
+            className = ""+packageName+"."+fileName
+
+            ## Save run
+            ####################
+            self.lastMain = className
+            self.lastProject = currentProject
+
+
+        ## Run
+        ###########
+        self.printlnToOutput("Running main: "+self.lastMain)
+
+        #### Run over maven
+        executor = ScalBuild.Exec2.CommandExecutor(self)
+        executor.run( shell_cmd = "cd "+self.lastProject.projectPath+" && mvn scala:run -q -Dmaven.test.skip=true -DmainClass="+self.lastMain,
+                encoding =  "UTF-8" )
 
 
 #################################
@@ -256,4 +342,6 @@ class ScalEventListener(sublime_plugin.EventListener):
                 project.buildRequired = True
 
 
+    def on_query_completions(self, view, prefix, locations):
+        pass
 

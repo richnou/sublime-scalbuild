@@ -1,0 +1,8 @@
+[
+
+{
+    "keys": ["ctrl+f11"],
+    "command": "scal_run_main",
+    "args" : { "paths": [] , "reRun" : "true" }
+}
+]

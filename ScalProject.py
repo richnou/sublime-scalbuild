@@ -3,8 +3,10 @@ import glob
 import os
 from xml.etree.ElementTree import ElementTree
 
+import threading
 
 import ScalBuild
+
 
 '''
 This Class Describes a project, with informations about it, and dependencies etc...
@@ -23,6 +25,11 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
         else:
             self.buildRequired = False
 
+        ## Release finished semaphore
+        self.finishedSemaphore.release()
+
+    def wait_finished(self):
+        self.finishedSemaphore.acquire()
 
     def printlnToOutput(self,string):
         if self.dataListener:
@@ -31,6 +38,11 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
             print(string)
 
     def __init__(self, projectPath=None):
+
+        ## Executor Sync
+        ###################
+        self.finishedSemaphore = threading.Semaphore()
+
 
         ## Default Project IDs
         ################
@@ -95,8 +107,12 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
 
     ## Build The Project using maven of SBT or whatever
     ##############################
-    def build(self):
+    def build(self,buildTarget="install"):
 
+
+        ## Remove possibly not acquired finished grant
+        #############
+        self.finishedSemaphore.acquire(False)
 
         self.printlnToOutput("["+self.artifactId+"] Building")
 
@@ -121,7 +137,7 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
 
         elif self.buildSystem == "maven":
 
-            self.printlnToOutput("["+self.artifactId+"] Building Using maven")
+            self.printlnToOutput("["+self.artifactId+"] Building Using maven and goal "+buildTarget)
 
             ## Check if we need to build dependencies
             ########################
@@ -135,6 +151,7 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
                         self.buildRequired = True
                         self.printlnToOutput("["+dependency["artifactId"]+"]   -> Build Required")
                         dependencyProject.build()
+                        dependencyProject.wait_finished()
                     else:
                         self.printlnToOutput("["+dependency["artifactId"]+"]   -> Build Not Required")
 
@@ -155,8 +172,7 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
 
                 ## If Build successful -> Build not required anymore
                 ## Build required is updated in on_finished method as ProcessStatusListener
-                executor.run( shell_cmd = "cd "+self.projectPath+" && mvn install", encoding =  "UTF-8" )
-
+                executor.run( shell_cmd = "cd "+self.projectPath+" && mvn "+buildTarget, encoding =  "UTF-8" )
 
         else:
             self.printlnToOutput("["+self.artifactId+"] Unsupported buildSystem")

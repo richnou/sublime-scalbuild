@@ -5,11 +5,9 @@
     "variants": [
 
         {
-          "target": "scal_build",
-          "name": "Install",
-          "args": {
-                "target" : "install"
-           }
+          "name": "Run",
+          "paths" : [],
+           "buildTarget" : "compile"
         }
 
     ]
