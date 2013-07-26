@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>name</key>
+      <string>MavenOutput</string>
+    <key>scopeName</key>
+      <string>output.maven</string>
+    <key>uuid</key>
+      <string>68532a09-6f82-3bcdd-a3ae-2dd2d81423b9</string>
+    <key>patterns</key>
+      <array>
+
+
+
+        <!-- [INFO] --- Output -->
+        <dict>
+          <key>match</key>
+            <string>^\s*.*\[INFO\] ---.*$</string>
+          <key>name</key>
+            <string>output.maven.info.infoLine</string>
+        </dict>
+
+        <!-- [INFO] Output -->
+        <dict>
+          <key>match</key>
+            <string>^\s*.*\[INFO\].*$</string>
+          <key>name</key>
+            <string>output.maven.info</string>
+          <key>scope</key>
+            <string>output.maven.info</string>
+        </dict>
+
+        <!-- [WARNING] Output -->
+        <dict>
+          <key>match</key>
+            <string>^\s*.*\[WARNING\].*$</string>
+          <key>name</key>
+            <string>output.maven.warning</string>
+          <key>scope</key>
+            <string>output.maven.warning</string>
+        </dict>
+
+        <!-- [EROOR] Output -->
+        <dict>
+          <key>match</key>
+            <string>^\s*.*\[ERROR\].*$</string>
+          <key>name</key>
+            <string>output.maven.error</string>
+          <key>scope</key>
+            <string>output.maven.error</string>
+        </dict>
+
+        <!-- CSI Colors -->
+        <!-- ########## -->
+
+        <!-- Cyan -->
+        <dict>
+            <key>match</key>
+              <string>^(\s*.*\[36m)([\w\s._,\-:]+).+\[0m.*$</string>
+            <key>name</key>
+              <string>output.maven.hide</string>
+             <key>captures</key>
+              <dict>
+                <key>2</key>
+                <dict>
+                  <key>name</key>
+                  <string>output.maven.color.cyan</string>
+                </dict>
+                <key>1</key>
+                <dict>
+                  <key>name</key>
+                  <string>output.maven.hide</string>
+                </dict>
+              </dict>
+        </dict>
+        <!-- ########## -->
+
+        <!-- Green -->
+        <dict>
+            <key>match</key>
+              <string>^(\s*.*\[32m)([\w\s._,\-:]+).+\[0m.*$</string>
+            <key>name</key>
+              <string>output.maven.hide</string>
+             <key>captures</key>
+              <dict>
+                <key>2</key>
+                <dict>
+                  <key>name</key>
+                  <string>output.maven.color.green</string>
+                </dict>
+                <key>1</key>
+                <dict>
+                  <key>name</key>
+                  <string>output.maven.hide</string>
+                </dict>
+              </dict>
+        </dict>
+        <!-- ########## -->
+
+      </array>
+  </dict>
+</plist>
