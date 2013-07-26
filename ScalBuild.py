@@ -115,23 +115,11 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
     ## Data Listener Implementation
     def on_data(self,string):
 
-        self.printlnToOutput("** Filtering **")
-
-        ## Filter Out Escape Color characters
-        #############
-        for x in string:
-            if x == 0x1B:
-                self.printlnToOutput("** found ESC **")
-
         self.outputPanel.run_command('append', {'characters':string, 'force': True, 'scroll_to_end': True})
         self.outputPanel.run_command('move_to',{'to': 'eof'})
 
     ## Utility println
     def printlnToOutput(self,string):
-
-        self.outputPanel.run_command('append', {'characters':"** Filtering **"+"\n", 'force': True, 'scroll_to_end': True})
-
-
 
         self.outputPanel.run_command('append', {'characters':string+"\n", 'force': True, 'scroll_to_end': True})
         self.outputPanel.run_command('move_to',{'to': 'eof'})
@@ -169,6 +157,8 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
         self.outputPanel.settings().set("gutter", True)
         self.outputPanel.settings().set("scroll_past_end", False)
         self.outputPanel.set_read_only(True)
+        self.outputPanel.set_syntax_file("Packages/ScalBuild/MavenOutput.tmLanguage")
+        self.outputPanel.settings().set("color_scheme", "Packages/ScalBuild/MavenOutput.tmTheme")
         self.window.run_command("show_panel", {"panel": "output.exec"})
 
         self.printlnToOutput("Call args: "+str(self.paths))
