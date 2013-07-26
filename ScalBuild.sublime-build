@@ -1,13 +1,17 @@
 {
     "target" : "scal_build",
     "selector": "source.scala",
+    "buildTarget" : "compile",
+
+
 
     "variants": [
 
         {
           "name": "Run",
           "paths" : [],
-           "buildTarget" : "compile"
+           "buildTarget" : "test",
+           "rebuild" : "true"
         }
 
     ]

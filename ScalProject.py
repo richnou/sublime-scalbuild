@@ -107,8 +107,12 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
 
     ## Build The Project using maven of SBT or whatever
     ##############################
-    def build(self,buildTarget="install"):
+    def build(self,buildTarget="install",rebuild=False):
 
+        ## Rebuild ?
+        if rebuild == True:
+            self.printlnToOutput("["+self.artifactId+"] Forcing re-Building")
+            self.buildRequired = True
 
         ## Remove possibly not acquired finished grant
         #############

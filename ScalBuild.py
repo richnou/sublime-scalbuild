@@ -114,11 +114,25 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
 
     ## Data Listener Implementation
     def on_data(self,string):
+
+        self.printlnToOutput("** Filtering **")
+
+        ## Filter Out Escape Color characters
+        #############
+        for x in string:
+            if x == 0x1B:
+                self.printlnToOutput("** found ESC **")
+
         self.outputPanel.run_command('append', {'characters':string, 'force': True, 'scroll_to_end': True})
         self.outputPanel.run_command('move_to',{'to': 'eof'})
 
     ## Utility println
     def printlnToOutput(self,string):
+
+        self.outputPanel.run_command('append', {'characters':"** Filtering **"+"\n", 'force': True, 'scroll_to_end': True})
+
+
+
         self.outputPanel.run_command('append', {'characters':string+"\n", 'force': True, 'scroll_to_end': True})
         self.outputPanel.run_command('move_to',{'to': 'eof'})
 
@@ -129,9 +143,13 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
 
     ## Threaded Run
     ##########################
-    def run(self,paths = [],buildTarget="install"):
+    def run(self,paths = [],buildTarget="install",rebuild=False):
+
         self.paths = paths
         self.buildTarget = buildTarget
+        self.rebuild = rebuild
+
+
         sublime.set_timeout_async(self.do_run, 0)
 
     ## Main Run of command
@@ -209,11 +227,12 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
         self.printlnToOutput("------ Building Projects --------")
         for project in ScalBuild.buildProjects:
             self.printlnToOutput("Project: "+project.strId())
-            project.build(buildTarget=self.buildTarget)
+            project.build(buildTarget=self.buildTarget,rebuild=self.rebuild)
+
 
 
 #######################################
-## Thsi command just reloads the list of projects
+## This command just reloads the list of projects
 ########################################
 class ScalReloadProjectsCommand(sublime_plugin.WindowCommand):
 
@@ -241,20 +260,50 @@ class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
 
     ## Data Listener Implementation
     def on_data(self,string):
+
+        #self.printlnToOutput("** Filtering **")
+
         self.outputPanel.run_command('append', {'characters':string, 'force': True, 'scroll_to_end': True})
         self.outputPanel.run_command('move_to',{'to': 'eof'})
+
+
+        return
+        ## Filter Out Escape Color characters
+        #############
+        ignoreNextCount = 0
+        for x in string:
+            #print("Character: "+x+" // "+str(ord(x)))
+
+            if ignoreNextCount>0:
+                ignoreNextCount-=1
+            elif ord(x) == 27:
+                #self.printlnToOutput("** found ESC **")
+                #self.outputPanel.run_command('append', {'characters':"<b>", 'force': True, 'scroll_to_end': True})
+                ignoreNextCount = 3
+            else:
+                ignoreNextCount = 0
+                self.outputPanel.run_command('append', {'characters':x, 'force': True, 'scroll_to_end': True})
+
+
+        #self.outputPanel.run_command('append', {'characters':"</b>", 'force': True, 'scroll_to_end': True})
+
+        self.outputPanel.run_command('move_to',{'to': 'eof'})
+
 
     ## Utility println
     def printlnToOutput(self,string):
         self.outputPanel.run_command('append', {'characters':string+"\n", 'force': True, 'scroll_to_end': True})
         self.outputPanel.run_command('move_to',{'to': 'eof'})
 
+
     def run(self,paths=[],reRun=False):
+
 
         ## Open Output Panel
         ##################
         self.outputPanel = sublime.active_window().create_output_panel("run")
-        self.outputPanel.set_name("run")
+        self.outputPanel.set_syntax_file("Packages/ScalBuild/MavenOutput.tmLanguage")
+        self.outputPanel.settings().set("color_scheme", "Packages/ScalBuild/MavenOutput.tmTheme")
         sublime.active_window().run_command("show_panel", {"panel": "output.run"})
 
         ## ReRun or not ?
@@ -265,9 +314,13 @@ class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
 
             ## Determine File and class
             #################
+            if len(paths)==0 :
+                currentFile = sublime.active_window().active_view().file_name()
+            else :
+                currentFile = paths[0]
             #currentFile = sublime.active_window().active_view().file_name()
             #currentFile = SideBarSelection(paths).getSelectedItems().index(0)
-            currentFile = paths[0]
+
 
             #### Don't run not scala files
             if len(currentFile)>0 and currentFile.endswith(".scala")!=True :
@@ -309,6 +362,15 @@ class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
 
             className = ""+packageName+"."+fileName
 
+            #### Try to find scala Test markers
+            ########################
+            self.scalaTest = False
+            scalaTestSearchRe = re.compile(r"^\s*class\s+"+fileName+r"\s+.*extends\s+[A-Za-z]+Spec\s+.*$",re.MULTILINE)
+            #self.printlnToOutput("Searching with: "+scalaTestSearchRe.pattern)
+            scalaSearch = scalaTestSearchRe.search(content)
+            if scalaSearch != None:
+                self.scalaTest = True
+
             ## Save run
             ####################
             self.lastMain = className
@@ -321,8 +383,18 @@ class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
 
         #### Run over maven
         executor = ScalBuild.Exec2.CommandExecutor(self)
-        executor.run( shell_cmd = "cd "+self.lastProject.projectPath+" && mvn scala:run -q -Dmaven.test.skip=true -DmainClass="+self.lastMain,
+        if self.scalaTest == True:
+            self.printlnToOutput("Running as Scala Test ")
+            executor.run( shell_cmd = "cd "+self.lastProject.projectPath+" && mvn test -Dsuites="+self.lastMain,
                 encoding =  "UTF-8" )
+        else:
+            executor.run( shell_cmd = "cd "+self.lastProject.projectPath+" && mvn scala:run -q -Dmaven.test.skip=true -DmainClass="+self.lastMain,
+                encoding =  "UTF-8" )
+
+
+
+        #executor.run( shell_cmd = "cd "+self.lastProject.projectPath+" && mvn scala:run -q -Dmaven.test.skip=true -DmainClass="+self.lastMain,
+                #encoding =  "UTF-8" )
 
 
 #################################

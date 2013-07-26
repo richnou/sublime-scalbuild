@@ -16,6 +16,27 @@
              "command": "scal_run_main",
              "caption" : "Scala Main ReRun",
              "args" : { "paths": [] , "reRun" : "true" }
+        },
+        {
+
+            "id": "maven",
+            "caption" : "Maven Commands",
+            "children" : [
+
+                {
+                    "caption" : "Deploy",
+                    "command" : "scal_build",
+                    "args" : { "paths": [] , "buildTarget" : "deploy" }
+
+                },
+                {
+                    "caption" : "Install",
+                    "command" : "scal_build",
+                    "args" : { "paths": [] , "buildTarget" : "install" }
+
+                }
+
+            ]
         }
     ]
 }

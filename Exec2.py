@@ -180,7 +180,7 @@ class CommandExecutor(ProcessListener):
     def finish(self, proc):
 
         ## Get Exit code and pass to status listener
-        self.processStatusListener.on_finished(proc)
+        self.processStatusListener.on_finished(proc=proc)
 
         ## Debug if necessary
         if not self.quiet:
