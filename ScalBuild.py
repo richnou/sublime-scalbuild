@@ -296,76 +296,72 @@ class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
         self.outputPanel.settings().set("color_scheme", "Packages/ScalBuild/MavenOutput.tmTheme")
         sublime.active_window().run_command("show_panel", {"panel": "output.run"})
 
-        ## ReRun or not ?
+        ## Run ?
+        ##########################################
+
+        ## Determine File and class
+        #################
+        if len(paths)==0 :
+            currentFile = sublime.active_window().active_view().file_name()
+        else :
+            currentFile = paths[0]
+        #currentFile = sublime.active_window().active_view().file_name()
+        #currentFile = SideBarSelection(paths).getSelectedItems().index(0)
+
+
+        #### Don't run not scala files
+        if len(currentFile)>0 and currentFile.endswith(".scala")!=True :
+            return
+
+        self.printlnToOutput("Running File: "+currentFile)
+
+        ## Determine Project Folder
+        ##############
+        currentProject = None
+        for project in ScalBuild.availableProjects:
+            if  currentFile.startswith(project.projectPath):
+                currentProject = project
+                break
+
+        if currentProject==None:
+            self.printlnToOutput("Error: File must be in a ScalBuild project folder ")
+            return
+
+
+        #### Determine Theoretical Class by extracting package and taking file name
+        ################
+
+        ## File Name
+        fileName = re.search(".*/(.+)\.scala",currentFile)
+        if fileName == None:
+            self.printlnToOutput("Could not determine File name")
+        else:
+            fileName = fileName.group(1)
+
+        ## Package
+        f = open(currentFile)
+        content = f.read()
+        packageName = re.search("package (.*)\s*;?\n\r?",content)
+        if packageName == None:
+            self.printlnToOutput("Could not determine packageName name")
+        else:
+            packageName = packageName.group(1)
+
+        className = ""+packageName+"."+fileName
+
+        #### Try to find scala Test markers
         ########################
+        self.scalaTest = False
+        scalaTestSearchRe = re.compile(r"^\s*class\s+"+fileName+r"\s+.*extends\s+[A-Za-z]+Spec\s+.*$",re.MULTILINE)
+        #self.printlnToOutput("Searching with: "+scalaTestSearchRe.pattern)
+        scalaSearch = scalaTestSearchRe.search(content)
+        if scalaSearch != None:
+            self.scalaTest = True
 
-        ## Can't rerun
-        if reRun == False or (self.lastProject == None or self.lastMain == None):
-
-            ## Determine File and class
-            #################
-            if len(paths)==0 :
-                currentFile = sublime.active_window().active_view().file_name()
-            else :
-                currentFile = paths[0]
-            #currentFile = sublime.active_window().active_view().file_name()
-            #currentFile = SideBarSelection(paths).getSelectedItems().index(0)
-
-
-            #### Don't run not scala files
-            if len(currentFile)>0 and currentFile.endswith(".scala")!=True :
-                return
-
-            self.printlnToOutput("Running File: "+currentFile)
-
-            ## Determine Project Folder
-            ##############
-            currentProject = None
-            for project in ScalBuild.availableProjects:
-                if  currentFile.startswith(project.projectPath):
-                    currentProject = project
-                    break
-
-            if currentProject==None:
-                self.printlnToOutput("Error: File must be in a ScalBuild project folder ")
-                return
-
-
-            #### Determine Theoretical Class by extracting package and taking file name
-            ################
-
-            ## File Name
-            fileName = re.search(".*/(.+)\.scala",currentFile)
-            if fileName == None:
-                self.printlnToOutput("Could not determine File name")
-            else:
-                fileName = fileName.group(1)
-
-            ## Package
-            f = open(currentFile)
-            content = f.read()
-            packageName = re.search("package (.*)\s*;?\n\r?",content)
-            if packageName == None:
-                self.printlnToOutput("Could not determine packageName name")
-            else:
-                packageName = packageName.group(1)
-
-            className = ""+packageName+"."+fileName
-
-            #### Try to find scala Test markers
-            ########################
-            self.scalaTest = False
-            scalaTestSearchRe = re.compile(r"^\s*class\s+"+fileName+r"\s+.*extends\s+[A-Za-z]+Spec\s+.*$",re.MULTILINE)
-            #self.printlnToOutput("Searching with: "+scalaTestSearchRe.pattern)
-            scalaSearch = scalaTestSearchRe.search(content)
-            if scalaSearch != None:
-                self.scalaTest = True
-
-            ## Save run
-            ####################
-            self.lastMain = className
-            self.lastProject = currentProject
-
+        ## Save run
+        ####################
+        self.lastMain = className
+        self.lastProject = currentProject
 
         ## Run
         ###########
@@ -383,8 +379,9 @@ class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
 
 
 
-        #executor.run( shell_cmd = "cd "+self.lastProject.projectPath+" && mvn scala:run -q -Dmaven.test.skip=true -DmainClass="+self.lastMain,
-                #encoding =  "UTF-8" )
+
+
+
 
 
 #################################

@@ -139,6 +139,8 @@
                 <string>red</string>
             </dict>
         </dict>
+
+        <!-- Cyan -->
         <dict>
             <key>name</key>
             <string>Cyan Line</string>
@@ -152,6 +154,8 @@
                 <string>cyan</string>
             </dict>
         </dict>
+
+        <!-- Green -->
         <dict>
             <key>name</key>
             <string>Green Line</string>
@@ -163,6 +167,36 @@
                 <string>bold</string>
                 <key>foreground</key>
                 <string>green</string>
+            </dict>
+        </dict>
+
+        <!-- Red -->
+        <dict>
+            <key>name</key>
+            <string>Red Line</string>
+            <key>scope</key>
+            <string>output.maven.color.red</string>
+            <key>settings</key>
+            <dict>
+                <key>fontStyle</key>
+                <string>bold</string>
+                <key>foreground</key>
+                <string>red</string>
+            </dict>
+        </dict>
+
+        <!-- Yellow -->
+        <dict>
+            <key>name</key>
+            <string>Yellow Line</string>
+            <key>scope</key>
+            <string>output.maven.color.yellow</string>
+            <key>settings</key>
+            <dict>
+                <key>fontStyle</key>
+                <string>bold</string>
+                <key>foreground</key>
+                <string>yellow</string>
             </dict>
         </dict>
 

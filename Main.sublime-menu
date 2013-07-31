@@ -34,6 +34,12 @@
                     "command" : "scal_build",
                     "args" : { "paths": [] , "buildTarget" : "install" }
 
+                },
+                {
+                    "caption" : "Clean",
+                    "command" : "scal_build",
+                    "args" : { "paths": [] , "buildTarget" : "clean" }
+
                 }
 
             ]

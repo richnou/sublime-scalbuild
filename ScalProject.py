@@ -162,7 +162,7 @@ class ScalBuildProject(ScalBuild.Exec2.ProcessStatusListener):
             ## Change output parameters
             ###############################
             self.dataListener.setOutputSetting("result_base_dir", self.projectPath)
-            self.dataListener.setOutputSetting("result_file_regex", "^\[ERROR\] (.+):([0-9]+): (.+)$")
+            self.dataListener.setOutputSetting("result_file_regex", "^\[(ERROR|WARNING)\] (.+):([0-9]+): (.+)$")
 
             ## Create Executor
             ############################

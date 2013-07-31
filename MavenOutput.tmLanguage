@@ -54,10 +54,10 @@
         <!-- CSI Colors -->
         <!-- ########## -->
 
-        <!-- Cyan -->
+        <!-- Cyan (36) -->
         <dict>
             <key>match</key>
-              <string>^(\s*.*\[36m)([\w\s._,\-:]+).+\[0m.*$</string>
+              <string>^(\s*.*\[36m)([\w\s._,\-:+*\(\)/]+).+\[0m.*$</string>
             <key>name</key>
               <string>output.maven.hide</string>
              <key>captures</key>
@@ -76,10 +76,10 @@
         </dict>
         <!-- ########## -->
 
-        <!-- Green -->
+        <!-- Green (32) -->
         <dict>
             <key>match</key>
-              <string>^(\s*.*\[32m)([\w\s._,\-:]+).+\[0m.*$</string>
+              <string>^(\s*.*\[32m)([\w\s._,\-:+*\(\)/]+).+\[0m.*$</string>
             <key>name</key>
               <string>output.maven.hide</string>
              <key>captures</key>
@@ -97,6 +97,49 @@
               </dict>
         </dict>
         <!-- ########## -->
+
+        <!-- Red (31) -->
+        <dict>
+            <key>match</key>
+              <string>^(\s*.*\[31m)([\w\s._,\-:+*\(\)/@$]+).+\[0m.*$</string>
+            <key>name</key>
+              <string>output.maven.hide</string>
+             <key>captures</key>
+              <dict>
+                <key>2</key>
+                <dict>
+                  <key>name</key>
+                  <string>output.maven.color.red</string>
+                </dict>
+                <key>1</key>
+                <dict>
+                  <key>name</key>
+                  <string>output.maven.hide</string>
+                </dict>
+              </dict>
+        </dict>
+        <!-- ########## -->
+
+        <!-- Yello (33) -->
+        <dict>
+            <key>match</key>
+              <string>^(\s*.*\[33m)([\w\s._,\-:+*\(\)/]+).+\[0m.*$</string>
+            <key>name</key>
+              <string>output.maven.hide</string>
+             <key>captures</key>
+              <dict>
+                <key>2</key>
+                <dict>
+                  <key>name</key>
+                  <string>output.maven.color.yellow</string>
+                </dict>
+                <key>1</key>
+                <dict>
+                  <key>name</key>
+                  <string>output.maven.hide</string>
+                </dict>
+              </dict>
+        </dict>
 
       </array>
   </dict>
