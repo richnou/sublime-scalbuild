@@ -57,7 +57,7 @@
         <!-- Cyan (36) -->
         <dict>
             <key>match</key>
-              <string>^(\s*.*\[36m)([\w\s._,\-:+*\(\)/]+).+\[0m.*$</string>
+              <string>^(\s*.*\[36m)([\w\s._,\-:+*\(\)/@$\[\]"]+).+\[0m.*$</string>
             <key>name</key>
               <string>output.maven.hide</string>
              <key>captures</key>
@@ -79,7 +79,7 @@
         <!-- Green (32) -->
         <dict>
             <key>match</key>
-              <string>^(\s*.*\[32m)([\w\s._,\-:+*\(\)/]+).+\[0m.*$</string>
+              <string>^(\s*.*\[32m)([\w\s._,\-:+*\(\)/@$\[\]"]+).+\[0m.*$</string>
             <key>name</key>
               <string>output.maven.hide</string>
              <key>captures</key>
@@ -101,7 +101,7 @@
         <!-- Red (31) -->
         <dict>
             <key>match</key>
-              <string>^(\s*.*\[31m)([\w\s._,\-:+*\(\)/@$]+).+\[0m.*$</string>
+              <string>^(\s*.*\[31m)([\w\s._,\-:+*\(\)/@$\[\]"']+).+\[0m.*$</string>
             <key>name</key>
               <string>output.maven.hide</string>
              <key>captures</key>
@@ -123,7 +123,7 @@
         <!-- Yello (33) -->
         <dict>
             <key>match</key>
-              <string>^(\s*.*\[33m)([\w\s._,\-:+*\(\)/]+).+\[0m.*$</string>
+              <string>^(\s*.*\[33m)([\w\s._,\-:+*\(\)/@$\[\]"]+).+\[0m.*$</string>
             <key>name</key>
               <string>output.maven.hide</string>
              <key>captures</key>

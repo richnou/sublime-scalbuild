@@ -10,7 +10,7 @@
         {
           "name": "Run",
           "paths" : [],
-           "buildTarget" : "test",
+           "buildTarget" : "install",
            "rebuild" : "true"
         }
 

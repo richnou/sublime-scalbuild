@@ -294,6 +294,7 @@ class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
         self.outputPanel = sublime.active_window().create_output_panel("run")
         self.outputPanel.set_syntax_file("Packages/ScalBuild/MavenOutput.tmLanguage")
         self.outputPanel.settings().set("color_scheme", "Packages/ScalBuild/MavenOutput.tmTheme")
+        self.outputPanel.settings().set("result_file_regex", "^\[(?:ERROR|WARNING)\] (.+):([0-9]+): (.+)$")
         sublime.active_window().run_command("show_panel", {"panel": "output.run"})
 
         ## Run ?
@@ -341,7 +342,7 @@ class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
         ## Package
         f = open(currentFile)
         content = f.read()
-        packageName = re.search("package (.*)\s*;?\n\r?",content)
+        packageName = re.search("package\s+(.*)\s*;?\n\r?",content)
         if packageName == None:
             self.printlnToOutput("Could not determine packageName name")
         else:
@@ -352,7 +353,7 @@ class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
         #### Try to find scala Test markers
         ########################
         self.scalaTest = False
-        scalaTestSearchRe = re.compile(r"^\s*class\s+"+fileName+r"\s+.*extends\s+[A-Za-z]+Spec\s+.*$",re.MULTILINE)
+        scalaTestSearchRe = re.compile(r"^\s*class\s+"+fileName+r"\s+.*extends\s+[A-Za-z]+(?:Spec|Suite)\s+.*$",re.MULTILINE)
         #self.printlnToOutput("Searching with: "+scalaTestSearchRe.pattern)
         scalaSearch = scalaTestSearchRe.search(content)
         if scalaSearch != None:
