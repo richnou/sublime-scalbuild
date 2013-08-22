@@ -32,7 +32,7 @@
                 {
                     "caption" : "Install",
                     "command" : "scal_build",
-                    "args" : { "paths": [] , "buildTarget" : "install" }
+                    "args" : { "paths": [] , "buildTarget" : "install" , "rebuild" : "true" }
 
                 },
                 {

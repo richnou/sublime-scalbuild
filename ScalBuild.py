@@ -294,7 +294,7 @@ class ScalRunMainCommand(sublime_plugin.WindowCommand,DataListener):
         self.outputPanel = sublime.active_window().create_output_panel("run")
         self.outputPanel.set_syntax_file("Packages/ScalBuild/MavenOutput.tmLanguage")
         self.outputPanel.settings().set("color_scheme", "Packages/ScalBuild/MavenOutput.tmTheme")
-        self.outputPanel.settings().set("result_file_regex", "^\[(?:ERROR|WARNING)\] (.+):([0-9]+): (.+)$")
+        self.outputPanel.settings().set("result_file_regex", "^\[(?:(?i)ERROR|WARNING)\] (.+):([0-9]+): (.+)$")
         sublime.active_window().run_command("show_panel", {"panel": "output.run"})
 
         ## Run ?
