@@ -208,8 +208,10 @@ class ScalBuildCommand(sublime_plugin.WindowCommand,DataListener):
             ## It no current File -> add all projects to build
             ########################
             if currentFile == None:
+                self.printlnToOutput("---> Project Selected for build:")
                 ScalBuild.buildProjects.append(project)
             elif currentFile != None and currentFile.startswith(project.projectPath):
+                self.printlnToOutput("---> Project Selected for build:")
                 ScalBuild.buildProjects.append(project)
 
         ## Build Selected Projects
